@@ -31,7 +31,7 @@ cert-manager:
 
 start-kind:
   kind delete cluster 
-  kind create cluster --config testdata/kind-{{KUBE_VERSION}}.yaml
+  kind create cluster --config k8s/kind-{{KUBE_VERSION}}.yaml
   sleep 5 
   kubectl wait --for=condition=Ready pod --all --all-namespaces --timeout=300s
 #  just cert-manager
