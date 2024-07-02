@@ -4,3 +4,16 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+actix-web = "4.8.0"
+
+[lib]
+path = "src/lib.rs"
+
+# Notice the double square brackets:  It's an array in TOML's syntax
+# We can have only one library ina project, but we can have multiple binaries
+[[bin]]
+path = "src/main.rs"
+name = "zero2prod"
+
+[dev-dependencies]
+reqwest = "0.12.5"
