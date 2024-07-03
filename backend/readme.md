@@ -3,6 +3,7 @@
 cargo install cargo-watch
 cargo install cargo-audit
 cargo install sqlx --no-default-features --features postgres
+cargo install cargo-udeps
 
 ## Ready to go CI Pipeline
 

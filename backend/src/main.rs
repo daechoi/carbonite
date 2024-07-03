@@ -1,17 +1,13 @@
-use std::net::TcpListener;
-
 use carbonite::configuration::Settings;
 use carbonite::startup::run;
-use env_logger::Env;
+use carbonite::telemetry::{get_subscriber, init_subscriber};
 use sqlx::PgPool;
+use std::net::TcpListener;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // `init` does call `set_logger`, so this is all we need to do.
-    // we are falling back to printing all logs at info-level or above
-    // if the RUST_LOG environment variable is not set.
-
-    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+    let subscriber = get_subscriber("carbonite".into(), "info".into(), std::io::stdout);
+    init_subscriber(subscriber);
 
     let settings = Settings::from_file("config/config.yaml").expect("failed to read configuration");
     let conn_pool = PgPool::connect(&settings.database.connection_string())
