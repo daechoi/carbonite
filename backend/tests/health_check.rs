@@ -1,6 +1,7 @@
 use carbonite::configuration::Settings;
-use sqlx::PgPool;
+use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::TcpListener;
+use uuid::Uuid;
 
 #[actix_web::test]
 async fn health_check_works() {
@@ -21,19 +22,39 @@ async fn health_check_works() {
 async fn spawn_app() -> String {
     let listener = TcpListener::bind("127.0.0.1:0").expect("failed to bind to random port");
     let port = listener.local_addr().unwrap().port();
-    let settings =
+    let mut settings =
         Settings::from_file("config/config.yaml").expect("Failed to read configuration.");
 
-    let connstr = settings.database.connection_string();
-    let conn = PgPool::connect(&connstr)
-        .await
-        .expect("Failed to connect to Postgres.");
+    settings.database.database_name = Uuid::new_v4().to_string();
+
+    let conn = configure_database(&settings).await;
 
     let server = carbonite::startup::run(listener, conn).expect("Failed to bind address");
 
     let _ = actix_web::rt::spawn(server);
 
     format!("http://127.0.0.1:{}", port)
+}
+
+pub async fn configure_database(settings: &Settings) -> PgPool {
+    let connstr = settings.database.connection_string_without_db();
+    println!("trying to connect to {}", connstr);
+    let mut conn = PgConnection::connect(&connstr)
+        .await
+        .expect("Failed to connect to Postgres.");
+    conn.execute(format!(r#"CREATE DATABASE "{}";"#, settings.database.database_name).as_str())
+        .await
+        .expect("Failed to create database.");
+
+    let conn_pool = PgPool::connect(&settings.database.connection_string())
+        .await
+        .expect("failed to connect to Postgres.");
+    sqlx::migrate!("./migrations")
+        .run(&conn_pool)
+        .await
+        .expect("Failed to migrate the database");
+
+    conn_pool
 }
 
 #[actix_web::test]
