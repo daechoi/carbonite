@@ -14,7 +14,7 @@ WORKDIR /app
 
 COPY --from=builder /app/target/release/carbonite carbonite
 
-COPY ../../backend/config/ config
+COPY ../../backend/config config
 ENV APP_ENVIRONMENT production
 
-ENTRYPOINT [".carbonite"]
+ENTRYPOINT ["./carbonite"]
