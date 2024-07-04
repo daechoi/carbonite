@@ -4,6 +4,7 @@ use carbonite::{
 };
 use once_cell::sync::Lazy;
 
+use secrecy::ExposeSecret;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::TcpListener;
 use uuid::Uuid;
@@ -63,16 +64,19 @@ async fn spawn_app() -> TestApp {
 }
 
 pub async fn configure_database(settings: &Settings) -> PgPool {
-    let connstr = settings.database.connection_string_without_db();
-    println!("trying to connect to {}", connstr);
-    let mut conn = PgConnection::connect(&connstr)
-        .await
-        .expect("Failed to connect to Postgres.");
+    let mut conn = PgConnection::connect(
+        settings
+            .database
+            .connection_string_without_db()
+            .expose_secret(),
+    )
+    .await
+    .expect("Failed to connect to Postgres.");
     conn.execute(format!(r#"CREATE DATABASE "{}";"#, settings.database.database_name).as_str())
         .await
         .expect("Failed to create database.");
 
-    let conn_pool = PgPool::connect(&settings.database.connection_string())
+    let conn_pool = PgPool::connect(&settings.database.connection_string().expose_secret())
         .await
         .expect("failed to connect to Postgres.");
     sqlx::migrate!("./migrations")
@@ -86,12 +90,6 @@ pub async fn configure_database(settings: &Settings) -> PgPool {
 #[actix_web::test]
 async fn subscribe_returns_a_200_for_valid_form_data() {
     let test_app = spawn_app().await;
-    let settings = Settings::from_file("config/config.yaml").unwrap();
-    let connstr = settings.database.connection_string();
-    let conn = PgPool::connect(&connstr)
-        .await
-        .expect("Failed to connect to Postgres.");
-
     let client = reqwest::Client::new();
     let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
     let response = client
@@ -103,7 +101,7 @@ async fn subscribe_returns_a_200_for_valid_form_data() {
         .expect("Failed to execute request.");
     assert_eq!(200, response.status().as_u16());
     let saved = sqlx::query!("SELECT email, name FROM subscriptions",) // 1
-        .fetch_one(&conn) // 2
+        .fetch_one(&test_app.db_pool) // 2
         .await // 3
         .expect("Failed to fetch saved subscription."); // 4
 

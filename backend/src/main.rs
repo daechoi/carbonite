@@ -1,6 +1,7 @@
 use carbonite::configuration::Settings;
 use carbonite::startup::run;
 use carbonite::telemetry::{get_subscriber, init_subscriber};
+use secrecy::ExposeSecret;
 use sqlx::PgPool;
 use std::net::TcpListener;
 
@@ -10,7 +11,7 @@ async fn main() -> std::io::Result<()> {
     init_subscriber(subscriber);
 
     let settings = Settings::from_file("config/config.yaml").expect("failed to read configuration");
-    let conn_pool = PgPool::connect(&settings.database.connection_string())
+    let conn_pool = PgPool::connect(&settings.database.connection_string().expose_secret())
         .await
         .expect("Failed to connect to database");
 

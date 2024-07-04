@@ -2,7 +2,6 @@ use actix_web::{post, web, HttpResponse};
 use chrono::Utc;
 use serde::Deserialize;
 use sqlx::PgPool;
-use tracing::Instrument;
 use uuid::Uuid;
 
 #[derive(Deserialize)]
@@ -11,39 +10,42 @@ struct FormData {
     name: String,
 }
 
+#[tracing::instrument(
+    name = "Adding a new subscriber.",
+    skip(form, conn_pool),
+    fields(
+        subscriber_email = %form.email,
+        subscriber_name = %form.name
+    )
+)]
 #[post("subscriptions")]
 pub async fn subscribe(form: web::Form<FormData>, conn_pool: web::Data<PgPool>) -> HttpResponse {
-    let request_id = Uuid::new_v4();
+    match insert_subscriber(conn_pool.get_ref(), &form.email, &form.name).await {
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
+}
 
-    let request_span = tracing::info_span!(
-        " Adding a new subscriber.",
-            %request_id,
-            subscriber_email = %form.email,
-            subscriber_name = %form.name
-    );
-
-    let _request_span_guard = request_span.enter();
-
-    let query_span = tracing::info_span!("Saving new subscriber details in the database.");
-
-    match sqlx::query!(
+#[tracing::instrument(
+    name = "Saving new subscriber details in the database.",
+    skip(email, name, conn_pool)
+)]
+async fn insert_subscriber(conn_pool: &PgPool, email: &str, name: &str) -> Result<(), sqlx::Error> {
+    sqlx::query!(
         r#"
         INSERT INTO subscriptions (id, email, name, subscribed_at)
         VALUES ($1, $2, $3, $4)
         "#,
         Uuid::new_v4(),
-        form.email,
-        form.name,
+        email,
+        name,
         Utc::now()
     )
-    .execute(conn_pool.get_ref())
-    .instrument(query_span)
+    .execute(conn_pool)
     .await
-    {
-        Ok(_) => HttpResponse::Ok().finish(),
-        Err(e) => {
-            tracing::error!("Failed to execute query: {:?}", e);
-            HttpResponse::InternalServerError().finish()
-        }
-    }
+    .map_err(|e| {
+        tracing::error!("Failed to execute query: {:?}", e);
+        e
+    })?;
+    Ok(())
 }
