@@ -3,6 +3,6 @@ application:
 database:
   port: 5431
   host: 'localhost'
-  database_user: 'postgres'
-  database_password: 'postgres'
+  username: 'postgres'
+  password: 'postgres'
   database_name: 'zerodb'
