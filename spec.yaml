@@ -2,8 +2,8 @@ name: carbonite
 region: nyc1
 services:
   - name: carbonite
-    dockerfile_path: docker/backend/Dockerfile
-    source_dir: backend
+    dockerfile_path: ./docker/backend/Dockerfile
+    source_dir: ./
     github:
       branch: main
       deploy_on_push: true

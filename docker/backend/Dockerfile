@@ -4,7 +4,7 @@ WORKDIR /app
 RUN apt update && apt install lld clang -y
 
 FROM chef as planner
-COPY ../../backend/ .
+COPY backend/ .
 RUN cargo chef prepare --recipe-path recipe.json
 
 FROM chef as builder
@@ -12,7 +12,7 @@ COPY --from=planner /app/recipe.json recipe.json
 
 RUN cargo chef cook --release --recipe-path recipe.json
 
-COPY ../../backend/ .
+COPY backend/ .
 
 ENV SQLX_OFFLINE true
 RUN cargo build --release --bin carbonite
@@ -26,7 +26,7 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends openssl ca-c
 
 COPY --from=builder /app/target/release/carbonite carbonite
 
-COPY ../../backend/config config
+COPY backend/config config
 ENV APP_ENVIRONMENT production
 
 ENTRYPOINT ["./carbonite"]
