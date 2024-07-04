@@ -1,0 +1,17 @@
+name: carbonite
+region: nyc1
+services:
+  - name: carbonite
+    dockerfile_path: docker/backend/Dockerfile
+    source_dir: backend
+    github:
+      branch: main
+      deploy_on_push: true
+      repo: daechoi/carbonite
+    health_check:
+      http_path: /health_check
+    http_port: 8080
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    routes:
+      - path: /
