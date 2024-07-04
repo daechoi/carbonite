@@ -1,0 +1,6 @@
+**/target/
+**/Cargo.lock
+**/tests/
+**/scripts/
+**/migrations/
+**/.env

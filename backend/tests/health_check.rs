@@ -45,12 +45,11 @@ async fn spawn_app() -> TestApp {
 
     let listener = TcpListener::bind("127.0.0.1:0").expect("failed to bind to random port");
     let port = listener.local_addr().unwrap().port();
-    let mut settings =
-        Settings::from_file("config/config.yaml").expect("Failed to read configuration.");
+    let mut settings = Settings::from_file().expect("Failed to read configuration.");
 
     settings.database.database_name = Uuid::new_v4().to_string();
 
-    let address = format!("http://127.0.0.1:{}", port);
+    let address = format!("http://{}:{}", settings.application.host, port);
     let conn = configure_database(&settings).await;
 
     let server = carbonite::startup::run(listener, conn.clone()).expect("Failed to bind address");
