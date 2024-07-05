@@ -34,6 +34,7 @@ impl TryFrom<String> for Environment {
 pub struct Settings {
     pub application: ApplicationSettings,
     pub database: DatabaseSettings,
+    pub email_client: EmailClientSettings,
 }
 
 #[derive(Deserialize)]
@@ -96,5 +97,18 @@ impl DatabaseSettings {
         self.without_db()
             .database(&self.database_name)
             .log_statements(tracing::log::LevelFilter::Trace)
+    }
+}
+
+#[derive(Deserialize)]
+pub struct EmailClientSettings {
+    pub base_url: String,
+    pub sender_email: String,
+    pub authorization_token: Secret<String>,
+}
+
+impl EmailClientSettings {
+    pub fn sender(&self) -> Result<crate::domain::SubscriberEmail, String> {
+        crate::domain::SubscriberEmail::parse(self.sender_email.clone())
     }
 }

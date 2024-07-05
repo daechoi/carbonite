@@ -32,7 +32,7 @@ pub struct NewSubscriber {
     pub name: SubscriberName,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SubscriberEmail(String);
 
 impl SubscriberEmail {

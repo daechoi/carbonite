@@ -51,7 +51,18 @@ async fn spawn_app() -> TestApp {
     let address = format!("http://{}:{}", settings.application.host, port);
     let conn = configure_database(&settings).await;
 
-    let server = carbonite::startup::run(listener, conn.clone()).expect("Failed to bind address");
+    let sender_email = settings
+        .email_client
+        .sender()
+        .expect("invalid sender email addr");
+    let email_client = carbonite::email_client::EmailClient::new(
+        sender_email,
+        settings.email_client.base_url,
+        settings.email_client.authorization_token,
+    );
+
+    let server = carbonite::startup::run(listener, conn.clone(), email_client)
+        .expect("Failed to bind address");
 
     let _ = actix_web::rt::spawn(server);
 
