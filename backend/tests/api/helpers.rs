@@ -20,6 +20,11 @@ static TRACING: Lazy<()> = Lazy::new(|| {
     }
 });
 
+pub struct ConfirmationLinks {
+    pub html: String,
+    pub plain_text: String,
+}
+
 pub struct TestApp {
     pub address: String,
     pub db_pool: PgPool,
@@ -36,6 +41,23 @@ impl TestApp {
             .send()
             .await
             .expect("Failed to execute request")
+    }
+
+    pub fn get_confirmation_links(&self, email_request: &wiremock::Request) -> ConfirmationLinks {
+        let body: serde_json::Value = serde_json::from_slice(&email_request.body).unwrap();
+
+        let get_links = |s: &str| {
+            let links: Vec<_> = linkify::LinkFinder::new()
+                .links(s)
+                .filter(|l| *l.kind() == linkify::LinkKind::Url)
+                .collect();
+            assert_eq!(links.len(), 1);
+            links[0].as_str().to_owned()
+        };
+
+        let html = get_links(&body["HtmlBody"].as_str().unwrap());
+        let plain_text = get_links(&body["TextBody"].as_str().unwrap());
+        ConfirmationLinks { html, plain_text }
     }
 }
 
