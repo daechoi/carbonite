@@ -1,5 +1,6 @@
 application:
   host: 0.0.0.0
+  base_url: https://carbonite-ydmmw.ondigitalocean.app
 database:
   require_ssl: true
   tmeout_milliseconds: 4000
