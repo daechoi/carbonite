@@ -56,6 +56,7 @@ pub fn run(
     email_client: EmailClient,
 ) -> Result<Server, std::io::Error> {
     let conn_pool = web::Data::new(conn_pool);
+    let email_client = web::Data::new(email_client);
     let server = HttpServer::new(move || {
         App::new()
             .wrap(TracingLogger::default())
