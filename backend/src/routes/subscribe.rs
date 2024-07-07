@@ -75,15 +75,22 @@ pub async fn subscribe(
     Ok(HttpResponse::Ok().finish())
 }
 
-#[allow(dead_code)]
-#[derive(Debug)]
+#[derive(thiserror::Error, Debug)]
 enum SubscribeError {
+    #[error("{0}")]
     ValidationError(String),
-    SendEmailError(reqwest::Error),
-    SubscriptionTokenError(SubscriptionTokenError),
-    PoolError(sqlx::Error),
-    InsertSubscriberError(sqlx::Error),
-    TransactionCommitError(sqlx::Error),
+    #[error("Failed to send a confirmation email")]
+    SendEmailError(#[from] reqwest::Error),
+    #[error("Failed to store the confirmation token for a new subscriber")]
+    SubscriptionTokenError(#[from] SubscriptionTokenError),
+    /*
+    #[error("Failed to acquire a Postgres connection from the pool")]
+    PoolError(#[source] sqlx::Error),
+    */
+    #[error("Failed to insert new subscriber in the database")]
+    InsertSubscriberError(#[source] sqlx::Error),
+    #[error("Failed to commit SQL transaction to store a new subscriber")]
+    TransactionCommitError(#[source] sqlx::Error),
 }
 
 impl From<String> for SubscribeError {
@@ -91,41 +98,6 @@ impl From<String> for SubscribeError {
         Self::ValidationError(e)
     }
 }
-
-impl From<reqwest::Error> for SubscribeError {
-    fn from(e: reqwest::Error) -> Self {
-        Self::SendEmailError(e)
-    }
-}
-
-impl From<SubscriptionTokenError> for SubscribeError {
-    fn from(error: SubscriptionTokenError) -> Self {
-        Self::SubscriptionTokenError(error)
-    }
-}
-
-impl std::fmt::Display for SubscribeError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            SubscribeError::ValidationError(e) => write!(f, "Validation error: {}", e),
-            SubscribeError::PoolError(e) => write!(
-                f,
-                "Failed to acquire a Postgres connection from the pool: {}",
-                e
-            ),
-            SubscribeError::InsertSubscriberError(e) => {
-                write!(f, "Failed to insert new subscriber in the database: {}", e)
-            }
-            SubscribeError::TransactionCommitError(e) => {
-                write!(f, "Failed to commit SQL transaction: {}", e)
-            }
-            SubscribeError::SendEmailError(e) => write!(f, "Email error: {}", e),
-            SubscribeError::SubscriptionTokenError(e) => write!(f, "Token error: {}", e),
-        }
-    }
-}
-
-impl std::error::Error for SubscribeError {}
 
 impl ResponseError for SubscribeError {
     fn status_code(&self) -> actix_web::http::StatusCode {
