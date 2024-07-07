@@ -14,6 +14,7 @@ reqwest = {version = "0.12.5", features=["json", "rustls-tls"]}
 secrecy = { version = "0.8.0", features = ["serde"] }
 serde = { version = "1.0.203", features = ["derive"] }
 serde-aux = "4.5.0"
+thiserror = "1.0.61"
 tokio = { version = "1.38.0", features = ["rt", "macros"] }
 tracing = { version = "0.1.40", features = ["log"] }
 tracing-actix-web = "0.7.11"

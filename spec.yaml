@@ -1,6 +1,13 @@
 name: carbonite
 region: nyc1
 services:
+  - name: frontend
+    dockerfile_path: ./docker/frontend/Dockerfile
+    github:
+      branch: react
+      deploy_on_push: true
+      repo: daechoi/carbonite
+    environment_slug: node-js
   - name: carbonite
     dockerfile_path: ./docker/backend/Dockerfile
     source_dir: ./
